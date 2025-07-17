@@ -2,6 +2,8 @@
 
 Mise à jour 07/2025, adaptation du dockerfile contexte cmake.
 
+<img src="https://github.com/ThomasIdgeo/svg_ressources_idgeo/blob/main/icons_png/MapServer_logo.png?raw=true" width="80">
+
 MapServer is build from Github source on the top of a Debian:latest base.
 
 MapServer is build with fcgi support.
@@ -41,9 +43,9 @@ sudo apt install build-essential -y
 
 **Dépendances**
 
-GDAL 3.11.3 [https://gdal.org/en/stable/](https://gdal.org/en/stable/)
-PROJ 9.6.2 [https://proj.org/en/stable/news.html](https://proj.org/en/stable/news.html)
-GEOS 3.13.1 [https://libgeos.org/usage/download/](https://libgeos.org/usage/download/)
+- GDAL 3.11.3 [https://gdal.org/en/stable/](https://gdal.org/en/stable/)
+- PROJ 9.6.2 [https://proj.org/en/stable/news.html](https://proj.org/en/stable/news.html)
+- GEOS 3.13.1 [https://libgeos.org/usage/download/](https://libgeos.org/usage/download/)
 
 Vérification des librairies et des versions présentes dans le *repo apt*, ça semble correct.
 
