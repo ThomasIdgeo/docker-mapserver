@@ -47,7 +47,7 @@ sudo apt install build-essential -y
 - PROJ 9.6.2 [https://proj.org/en/stable/news.html](https://proj.org/en/stable/news.html)
 - GEOS 3.13.1 [https://libgeos.org/usage/download/](https://libgeos.org/usage/download/)
 
-Vérification des librairies et des versions présentes dans le *repo apt*, ça semble correct.
+Vérification des librairies et des versions présentes dans le *repo apt*, semble correct.
 
 ## Compilation
 
@@ -74,3 +74,17 @@ Pousser l'image sur le repo.
 ```bash
 docker push thomasidgeo/mapserver:8.4
 ```
+
+## Usage
+
+Récupérer le zip, dézipper à l'endroit de votre choix. Personnaliser le docker-compose.yml avant de le lancer.
+
+-------
+Note de versions:
+-------
+- Apache 2.4
+- PHP 8.2
+- Mapserver 8.4
+- GDAL 3.12.0
+- GEOS 3.14.1
+- PROJ 9.7.0

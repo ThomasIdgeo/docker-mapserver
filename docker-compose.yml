@@ -1,0 +1,45 @@
+services:
+  mapserver:
+    image: thomasidgeo/mapserver-8.4  # Remplacez par votre image sur Docker Hub
+    container_name: mapserver-apache-php
+    ports:
+      - "8080:80"
+    volumes:
+      # Configuration Apache
+      - ./apache:/etc/apache2/sites-enabled
+      - ./apache:/etc/apache2/conf-enabled
+      
+      # Logs Apache
+      - ./logs:/var/log/apache2
+      
+      # Données MapServer
+      - ./maps:/var/maps
+      - ./maps/fonts:/var/maps/fonts
+      - ./maps/icons:/var/maps/icons
+      
+      # Répertoire web (optionnel)
+      - ./www:/var/www/html
+    
+    environment:
+      # Variables Apache
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+      - APACHE_LOG_DIR=/var/log/apache2
+      - APACHE_SERVERADMIN=admin@localhost
+      - APACHE_SERVERNAME=localhost
+      - APACHE_SERVERALIAS=docker.localhost
+      - APACHE_DOCUMENTROOT=/var/www/html
+      
+      # Variables PHP (optionnelles)
+      - PHP_MEMORY_LIMIT=256M
+      - PHP_UPLOAD_MAX_FILESIZE=50M
+      - PHP_POST_MAX_SIZE=50M
+    
+    restart: unless-stopped
+    
+    networks:
+      - mapserver-network
+
+networks:
+  mapserver-network:
+    driver: bridge

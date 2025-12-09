@@ -1,13 +1,14 @@
 # MapServer from git master
 # ~
 
-FROM debian:bookworm
+# Etape 1 : compilation des dépendances
+FROM debian:trixie AS builder
 LABEL maintainer="Thomas Michel <thomas.michel@idgeo.fr>"
 
-ENV HOME /root
-ENV GDAL_VERSION 3.11.3
-ENV GEOS_VERSION 3.13.1
-ENV PROJ_VERSION 9.6.2
+ENV HOME=/root
+ENV GDAL_VERSION=3.12.0
+ENV GEOS_VERSION=3.14.1
+ENV PROJ_VERSION=9.7.0
 ENV MAPSERVER_VERSION=branch-8-4
 RUN apt-get update && \
 	apt-get install -y apache2 \
@@ -29,6 +30,7 @@ RUN apt-get update && \
 		libfcgi-dev \
 		libodbc2 \ 
 		swig \
+		sqlite3 \
 		tar \
 		unzip \
 		vim \
@@ -39,7 +41,17 @@ RUN apt-get update && \
         python3-pip \
         python3-dev \
         python3-setuptools \
-        python3-wheel
+        python3-wheel \
+		php \
+		php-cli \
+		php-fpm \
+		php-curl \
+		php-gd \
+		php-xml \
+		php-mbstring \
+		php-zip \
+		php-pgsql \
+		libapache2-mod-php
 
 RUN apt-get install -y libapache2-mod-fcgid libfcgi-dev sqlite3 libsqlite3-dev
 
@@ -56,6 +68,7 @@ RUN cd /root && \
 
 # Install Proj7
 RUN cd /root && \
+    apt-get install -y libsqlite3-dev && \
 	wget http://download.osgeo.org/proj/proj-$PROJ_VERSION.tar.gz && \
 	tar -xzf proj-$PROJ_VERSION.tar.gz && \
 	cd proj-$PROJ_VERSION/test && \
@@ -88,30 +101,44 @@ RUN cd /root && git clone https://github.com/mapserver/mapserver.git \
 	&& git checkout ${MAPSERVER_VERSION} \
 	&& mkdir /root/mapserver/build \
     && cd /root/mapserver/build \
-	&& apt-get install libodbc2 swig -y \
-	&& cmake .. -DCMAKE_INSTALL_PREFIX=/opt -DCMAKE_PREFIX_PATH=/usr/local:/opt \
+	&& apt-get install libodbc2 swig libapache2-mod-fcgid libfcgi-dev sqlite3 libsqlite3-dev -y \
+	&& cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH=/usr/local:/opt \
 	-DWITH_THREAD_SAFETY=1 -DWITH_CURL=1 -DWITH_PHPNG=0 -DWITH_SVGCAIRO=0 \ 
 	-DWITH_CLIENT_WMS=1 -DWITH_CLIENT_WFS=1 -DWITH_SOS=0 -DWITH_KML=1 \
 	-DWITH_MSSQL2008=0 -DWITH_PYTHON=0 -DWITH_SVGCAIRO=0 -DWITH_XMLMAPFILE=0 -DWITH_FCGI=1 \ 
-	-DWITH_EXEMPI=0 -DWITH_FRIBIDI=0 -DWITH_HARFBUZZ=0 -DWITH_PROTOBUFC=0 \
+	-DWITH_EXEMPI=0 -DWITH_FRIBIDI=0 -DWITH_HARFBUZZ=0 -DWITH_PROTOBUFC=0 -DWITH_APACHE_MODULE=0 \
     && make \ 
     && make install \
     && /sbin/ldconfig
 
-RUN a2enmod rewrite
+RUN a2enmod rewrite php
 
+#RUN apt-get install -y libapache2-mod-fcgid libfcgi-dev sqlite3 libsqlite3-dev
+RUN ln -s /usr/local/bin/mapserv /usr/lib/cgi-bin/mapserv
+
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /root/geos-* /root/proj-* /root/gdal-*
+
+# Etape2 : Image finale
+FROM debian:trixie
+
+# Copie les fichiers nécessaires depuis l'étape précédente du build
+COPY --from=builder /usr/local /usr/local
+COPY --from=builder /opt /opt
+COPY --from=builder /etc/apache2 /etc/apache2
+COPY --from=builder /var/www /var/www
 
 # Set Apache environment variables (can be changed on docker run with -e)
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
-ENV APACHE_LOG_DIR /var/log/apache2
-ENV APACHE_PID_FILE /var/run/apache2.pid
-ENV APACHE_RUN_DIR /var/run/apache2
-ENV APACHE_LOCK_DIR /var/lock/apache2
-ENV APACHE_SERVERADMIN admin@localhost
-ENV APACHE_SERVERNAME localhost
-ENV APACHE_SERVERALIAS docker.localhost
-ENV APACHE_DOCUMENTROOT /var/www/html
+ENV APACHE_RUN_USER=www-data
+ENV APACHE_RUN_GROUP=www-data
+ENV APACHE_LOG_DIR=/var/log/apache2
+ENV APACHE_PID_FILE=/var/run/apache2.pid
+ENV APACHE_RUN_DIR=/var/run/apache2
+ENV APACHE_LOCK_DIR=/var/lock/apache2
+ENV APACHE_SERVERADMIN=admin@localhost
+ENV APACHE_SERVERNAME=localhost
+ENV APACHE_SERVERALIAS=docker.localhost
+ENV APACHE_DOCUMENTROOT=/var/www/html
 
 
 EXPOSE 80
