@@ -6,8 +6,8 @@ services:
       - "8080:80"
     volumes:
       # Configuration Apache
-      - ./apache:/etc/apache2/sites-enabled
-      - ./apache:/etc/apache2/conf-enabled
+      - ./apache/sites-available:/etc/apache2/sites-available
+      - ./apache/conf-available:/etc/apache2/conf-available
       
       # Logs Apache
       - ./logs:/var/log/apache2
@@ -16,9 +16,17 @@ services:
       - ./maps:/var/maps
       - ./maps/fonts:/var/maps/fonts
       - ./maps/icons:/var/maps/icons
+      - ./mapfiles:/etc/mapserver
+      - ./data:/var/mapserver/data
+
+      # Fonts personnalisées
+      - ./fonts:/usr/share/fonts/truetype/custom
       
-      # Répertoire web (optionnel)
-      - ./www:/var/www/html
+      # Répertoire web
+      - ./html:/var/www/html
+      
+      # Répertoire temporaire MapServer
+      - ./tmp/ms_tmp:/tmp/ms_tmp
     
     environment:
       # Variables Apache
@@ -29,6 +37,28 @@ services:
       - APACHE_SERVERNAME=localhost
       - APACHE_SERVERALIAS=docker.localhost
       - APACHE_DOCUMENTROOT=/var/www/html
+
+            # Variables MapServer
+      - MS_MAPFILE=/etc/mapserver/carte.map
+      - MS_MAP_PATTERN=^/etc/mapserver/.*\.map$$|^/var/www/html/.*\.map$$
+      - MS_MAP_NO_PATH=1
+      - MS_ERRORFILE=/tmp/ms_tmp/ms_error.log
+      - MS_DEBUGLEVEL=2
+      
+      # Variables PROJ
+      - PROJ_LIB=/usr/local/share/proj
+      
+      # Variables GDAL (optimisation)
+      - GDAL_CACHEMAX=512
+      - GDAL_DISABLE_READDIR_ON_OPEN=YES
+      - CPL_VSIL_CURL_ALLOWED_EXTENSIONS=.tif,.tiff,.vrt
+      - VSI_CACHE=TRUE
+      - VSI_CACHE_SIZE=536870912
+      
+      # Locale et timezone
+      - LANG=fr_FR.UTF-8
+      - LC_ALL=fr_FR.UTF-8
+      - TZ=Europe/Paris
       
       # Variables PHP (optionnelles)
       - PHP_MEMORY_LIMIT=256M
@@ -36,6 +66,13 @@ services:
       - PHP_POST_MAX_SIZE=50M
     
     restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
     
     networks:
       - mapserver-network
