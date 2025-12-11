@@ -111,7 +111,10 @@ RUN cd /root && git clone https://github.com/mapserver/mapserver.git \
     && make install \
     && /sbin/ldconfig
 
-RUN a2enmod rewrite php
+RUN a2enmod rewrite fcgid && \
+    a2enmod php8.2 2>/dev/null || echo "PHP module already enabled"
+
+RUN php -v
 
 #RUN apt-get install -y libapache2-mod-fcgid libfcgi-dev sqlite3 libsqlite3-dev
 RUN ln -s /usr/local/bin/mapserv /usr/lib/cgi-bin/mapserv
